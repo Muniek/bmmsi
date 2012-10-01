@@ -99,12 +99,12 @@ bestBlueNeuronsArray = Array.new
 		begin
 			#tutaj mamy już do dyspocyzji wybraną ramkę - teraz trzeba przejść
 			#po wszystkich neuronach i znaleźć najbliższy
-			smallestDistance = measureDistance(image, frameSize, i, j, neuronsArray.first, color)
+			smallestDistance = measureDistance(image, frameSize, j, i, neuronsArray.first, color)
 			bestNeuronId = 0
 
 			k=0
 			neuronsArray.each do |neuron|
-				actualDistance = measureDistance(image, frameSize, i, j, neuron, color)	
+				actualDistance = measureDistance(image, frameSize, j, i, neuron, color)	
 				#jeżeli teraz zmierzony dystans jest najmniejszym do tej pory,
 				#to zapamiętujemy go i zapamiętujemy id neuronu który go osiągnął
 				if (actualDistance < smallestDistance)
@@ -124,15 +124,20 @@ end
 
 #stworzenie obrazka docelowego
 image2 = Image.new(image.columns, image.rows)
+#image2 = Image.new(1000, 1000)
 
 newFrameArray = Array.new
 #iteracja po framesize
-width = image.columns/frameSize
 height = image.rows/frameSize
-puts width
+width = image.columns/frameSize
+
+puts image.rows
+puts image.columns
+
 puts height
-#File.open('log.txt', 'w') do |f|#fileprint
-(0...(image.rows/frameSize)).each do |x|
+puts width
+
+(0...height).each do |x|
 	(0...width).each do |y|
 		#iterujemy po calej "kratce"
 		(0...frameSize).each do |fX|
@@ -141,21 +146,22 @@ puts height
 				bestGreen = greenNeuronsArray[bestGreenNeuronsArray[y+x*width]].colorArray[fY+fX*frameSize]
 				bestBlue = blueNeuronsArray[bestBlueNeuronsArray[y+x*width]].colorArray[fY+fX*frameSize]
 				pixel = Pixel.new(bestRed, bestGreen, bestBlue)
-				image2.pixel_color(x*frameSize+fX, y*frameSize+fY, pixel)
-				#puts pixel
+				image2.pixel_color(y*frameSize+fY,x*frameSize+fX, pixel)
+				print "["
+				print x*frameSize+fX
+				print "]["
+				print y*frameSize+fY
+				print "]"
+				puts
 			end
 		end
-		print "["
-		print x
-		print "]["
-		print y
-		print "]\n"
+		#print "["
+		#puts x
+		#print "]["
+		#print y
+		#print "]\n"
 	end
 end
-
-
-	
-#end#fileprint
 
 =begin
 #przerysowanie jednego obrazka na drugi
@@ -165,9 +171,7 @@ end
 		image2.pixel_color(x, y, pixel)
 	end
 end
-#śmieci
-red = 
-		pixel = Pixel.new()
+
 =end
 
 #zapisanie docelowego obrazka na dysku
