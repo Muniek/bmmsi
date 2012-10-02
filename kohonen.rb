@@ -2,7 +2,9 @@ require 'RMagick'
 include Magick
 
 neuronsAmount = 10
-frameSize = 1
+frameSize = 2
+learningFactor = 0.05
+iterations = 1
 
 class Neuron
 	attr_accessor :colorArray
@@ -11,10 +13,35 @@ class Neuron
 		@colorArray = Array.new
 	end
 
-	#def adjust
+	def adjust(image, pixelX, pixelY, frameSize, learningFactor, color)
+		(0...frameSize).each do |i|
+			(0...frameSize).each do |j|
+				actualX = pixelX + i
+				actualY = pixelY + j
+				case color
+				when 0
+					pixelColor = image.pixel_color(actualY, actualX).red
+				when 1
+					pixelColor = image.pixel_color(actualY, actualX).green
+				when 2
+					pixelColor = image.pixel_color(actualY, actualX).blue
+				end
+
+				temp = colorArray[j+i*frameSize] + (pixelColor - colorArray[j+i*frameSize])*learningFactor
+				if (temp < 0)
+					temp = 0
+				elsif temp > 65535
+					temp = 65535
+				else
+					temp = temp
+				end
+				colorArray[j+i*frameSize] = temp
+			end
+		end
+	end
 end
 #funkcja mierząca odległość pomiędzy ramką a neuronem
-def measureDistance(image, frameSize, frameX, frameY, neuron, color)
+def measureFrameNeuronDistance(image, frameSize, frameX, frameY, neuron, color)
 	distance = 0
 	(0...frameSize).each do |loopX|
 		(0...frameSize).each do |loopY|
@@ -33,7 +60,7 @@ def measureDistance(image, frameSize, frameX, frameY, neuron, color)
 			#pixelColor już mamy, neuron też przekazaliśmy jako wartość
 			#neuronNumber = loopX+loopY*frameSize wyliczenie ktory element
 			#w tablicy neuronu
-			distance+=(pixelColor-neuron.colorArray[loopY+loopX*frameSize])**2 #tu moze byc blad - loopX i loopY do zamiany?
+			distance+=(pixelColor-neuron.colorArray[loopY+loopX*frameSize])**2
 		end
 	end
 	distance
@@ -69,57 +96,69 @@ greenNeuronsArray.each do |neuron|
 end
 
 #wczytanie obrazka-zrodla
-image = ImageList.new("obraz.bmp")
+image = ImageList.new("image.bmp")
 
 #tablice na zwycięskie neurony
 bestRedNeuronsArray = Array.new
 bestGreenNeuronsArray = Array.new
 bestBlueNeuronsArray = Array.new
 
-#odpowiednik "compress"
+
 #zakładamy że szerokość i wysokość obrazka są podzielne przez wielkość ramki
-3.times do |color|
-	puts color
-	
-	case color
-	when 0
-		neuronsArray = redNeuronsArray
-		bestNeuronsArray = bestRedNeuronsArray
-	when 1
-		neuronsArray = greenNeuronsArray
-		bestNeuronsArray = bestGreenNeuronsArray
-	when 2
-		neuronsArray = blueNeuronsArray
-		bestNeuronsArray = bestBlueNeuronsArray
-	end
 
-	i=0
-	begin
-		j=0
+iterations.times do
+	bestRedNeuronsArray.clear
+	bestGreenNeuronsArray.clear
+	bestBlueNeuronsArray.clear
+
+	3.times do |color|
+		puts color
+		
+		case color
+		when 0
+			neuronsArray = redNeuronsArray
+			bestNeuronsArray = bestRedNeuronsArray
+		when 1
+			neuronsArray = greenNeuronsArray
+			bestNeuronsArray = bestGreenNeuronsArray
+		when 2
+			neuronsArray = blueNeuronsArray
+			bestNeuronsArray = bestBlueNeuronsArray
+		end
+
+		i=0
 		begin
-			#tutaj mamy już do dyspocyzji wybraną ramkę - teraz trzeba przejść
-			#po wszystkich neuronach i znaleźć najbliższy
-			smallestDistance = measureDistance(image, frameSize, j, i, neuronsArray.first, color)
-			bestNeuronId = 0
+			j=0
+			begin
+				#tutaj mamy już do dyspocyzji wybraną ramkę - teraz trzeba przejść
+				#po wszystkich neuronach i znaleźć najbliższy
+				smallestDistance = measureFrameNeuronDistance(image, frameSize, j, i, neuronsArray.first, color)
+				bestNeuronId = 0
 
-			k=0
-			neuronsArray.each do |neuron|
-				actualDistance = measureDistance(image, frameSize, j, i, neuron, color)	
-				#jeżeli teraz zmierzony dystans jest najmniejszym do tej pory,
-				#to zapamiętujemy go i zapamiętujemy id neuronu który go osiągnął
-				if (actualDistance < smallestDistance)
-					smallestDistance = actualDistance	
-					bestNeuronId = k	
-				end		
-				k+=1
-			end
-			#zapisanie najlepszego neuronu
-			bestNeuronsArray.push(bestNeuronId)
-			#tutaj uczenie neuronu!
-			j+=frameSize
-		end while j<image.columns
-		i+=frameSize
-	end while i<image.rows
+				bestNeuron = neuronsArray.first
+
+				k=0
+				neuronsArray.each do |neuron|
+					actualDistance = measureFrameNeuronDistance(image, frameSize, j, i, neuron, color)	
+					#jeżeli teraz zmierzony dystans jest najmniejszym do tej pory,
+					#to zapamiętujemy go i zapamiętujemy id neuronu który go osiągnął
+					if (actualDistance < smallestDistance)
+						smallestDistance = actualDistance	
+						bestNeuronId = k
+						bestNeuron = neuron
+					end		
+					k+=1
+				end
+				#zapisanie najlepszego neuronu
+				bestNeuronsArray.push(bestNeuronId)
+							
+				bestNeuron.adjust(image, i, j, frameSize, learningFactor, color)
+				
+				j+=frameSize
+			end while j<image.columns
+			i+=frameSize
+		end while i<image.rows
+	end
 end
 
 #stworzenie obrazka docelowego
