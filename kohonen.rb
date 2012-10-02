@@ -1,8 +1,11 @@
 require 'RMagick'
 include Magick
 
-neuronsAmount = 10
-frameSize = 2
+startTime = Time.now
+
+
+neuronsAmount = 5
+frameSize = 4
 learningFactor = 0.05
 iterations = 1
 
@@ -27,15 +30,15 @@ class Neuron
 					pixelColor = image.pixel_color(actualY, actualX).blue
 				end
 
-				temp = colorArray[j+i*frameSize] + (pixelColor - colorArray[j+i*frameSize])*learningFactor
-				if (temp < 0)
-					temp = 0
-				elsif temp > 65535
-					temp = 65535
+				tempValue = colorArray[j+i*frameSize] + (pixelColor - colorArray[j+i*frameSize])*learningFactor
+				if (tempValue < 0)
+					tempValue = 0
+				elsif tempValue > 65535
+					tempValue = 65535
 				else
-					temp = temp
+					tempValue = tempValue
 				end
-				colorArray[j+i*frameSize] = temp
+				colorArray[j+i*frameSize] = tempValue
 			end
 		end
 	end
@@ -96,7 +99,7 @@ greenNeuronsArray.each do |neuron|
 end
 
 #wczytanie obrazka-zrodla
-image = ImageList.new("image.bmp")
+image = ImageList.new("testImage.bmp")
 
 #tablice na zwycięskie neurony
 bestRedNeuronsArray = Array.new
@@ -163,7 +166,6 @@ end
 
 #stworzenie obrazka docelowego
 image2 = Image.new(image.columns, image.rows)
-#image2 = Image.new(1000, 1000)
 
 newFrameArray = Array.new
 #iteracja po framesize
@@ -194,27 +196,16 @@ puts width
 				puts
 			end
 		end
-		#print "["
-		#puts x
-		#print "]["
-		#print y
-		#print "]\n"
 	end
 end
 
-=begin
-#przerysowanie jednego obrazka na drugi
-(0..image.columns).each do |x|
-	(0..image.rows).each do |y|
-		pixel = image.pixel_color(x, y)
-		image2.pixel_color(x, y, pixel)
-	end
-end
-
-=end
 
 #zapisanie docelowego obrazka na dysku
 image2.write("newimage.bmp")
 
-print "i am done\n"
-exit 
+print "done."
+
+
+puts "Czas: #{Time.now - startTime} sek."
+
+#exit 
